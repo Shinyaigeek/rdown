@@ -24,8 +24,7 @@ pub enum Token {
 
 impl Token {
     pub fn handle_sharp(source: &mut Peekable<Chars>) -> Self {
-        // * because first sharp have been eaten
-        let mut sharp_cnt: u8 = 1;
+        let mut sharp_cnt: u8 = 0;
         let mut heading_text = String::from("");
         let mut spaced = false;
 
@@ -59,6 +58,29 @@ impl Token {
             panic!("TODO");
         }
     }
+
+    pub fn handle_text(source: &mut Peekable<Chars>) -> Self {
+        let mut text = String::from("");
+
+        loop {
+            let c = source.peek();
+            if c.is_none() {
+                break;
+            }
+
+            // because c should be Some
+            let c = c.unwrap();
+
+            if c == &'\n' {
+                break;
+            } else {
+                text.push(*c);
+                source.next();
+            }
+        }
+
+        Self::Paragraph(text)
+    }
 }
 
 #[cfg(test)]
@@ -68,12 +90,10 @@ mod test {
     #[test]
     fn handle_sharp_works_with_simple_headings() {
         let mut source = "## hoge".chars().peekable();
-        source.next();
         let token = Token::handle_sharp(&mut source);
         assert_eq!(token, Token::Heading((2, "hoge".to_string())));
 
         let mut source = "### bar".chars().peekable();
-        source.next();
         let token = Token::handle_sharp(&mut source);
         assert_eq!(token, Token::Heading((3, "bar".to_string())));
     }

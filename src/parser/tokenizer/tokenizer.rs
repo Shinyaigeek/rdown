@@ -12,15 +12,17 @@ pub fn tokenize(source: &str) -> Vec<Token> {
         }
 
         // * because peekable
-        let c = source.next().unwrap();
-        if c == '\n' {
+        let c = source.peek().unwrap();
+        if c == &'\n' {
             tokens.push(Token::Break);
             is_breaked = true;
             continue;
         }
 
-        if c == '#' {
+        if c == &'#' && is_breaked {
             tokens.push(Token::handle_sharp(&mut source));
+            tokens.push(Token::Break);
+            source.next();
         }
     }
 
