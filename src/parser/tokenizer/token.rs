@@ -52,7 +52,6 @@ impl Token {
         }
 
         if sharp_cnt <= 6 {
-            // let heading_text: &'a str = &heading_text;
             Self::Heading((sharp_cnt, heading_text))
         } else {
             panic!("TODO");
@@ -96,5 +95,15 @@ mod test {
         let mut source = "### bar".chars().peekable();
         let token = Token::handle_sharp(&mut source);
         assert_eq!(token, Token::Heading((3, "bar".to_string())));
+    }
+
+    #[test]
+    fn handle_text_with_siple_text() {
+        let mut source = "asdf
+hoge"
+            .chars()
+            .peekable();
+        let token = Token::handle_text(&mut source);
+        assert_eq!(token, Token::Paragraph("asdf".to_string()));
     }
 }
