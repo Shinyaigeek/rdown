@@ -25,8 +25,6 @@ pub enum Token {
 impl Token {
     pub fn handle_sharp(source: &mut Peekable<Chars>) -> Self {
         let mut sharp_cnt: u8 = 0;
-        let mut heading_text = String::from("");
-        let mut spaced = false;
 
         loop {
             let c = source.peek();
@@ -41,9 +39,38 @@ impl Token {
                 sharp_cnt += 1;
                 source.next();
             } else if c == &' ' {
-                spaced = true;
                 source.next();
-            } else if c == &'\n' {
+                break;
+            } else {
+                let nth = source.count();
+                source.nth(nth - sharp_cnt as usize);
+                return Self::handle_text(source);
+            }
+        }
+
+        let heading_text = Self::handle_heading_text(source);
+
+        if sharp_cnt <= 6 {
+            Self::Heading((sharp_cnt, heading_text))
+        } else {
+            let nth = source.count();
+            source.nth(nth - sharp_cnt as usize);
+            return Self::handle_text(source);
+        }
+    }
+
+    fn handle_heading_text(source: &mut Peekable<Chars>) -> String {
+        let mut heading_text = "".to_string();
+        loop {
+            let c = source.peek();
+            if c.is_none() {
+                break;
+            }
+
+            // because c should be Some
+            let c = c.unwrap();
+
+            if c == &'\n' {
                 break;
             } else {
                 heading_text.push(*c);
@@ -51,11 +78,7 @@ impl Token {
             }
         }
 
-        if sharp_cnt <= 6 {
-            Self::Heading((sharp_cnt, heading_text))
-        } else {
-            panic!("TODO");
-        }
+        heading_text
     }
 
     pub fn handle_text(source: &mut Peekable<Chars>) -> Self {
