@@ -26,6 +26,12 @@ pub fn tokenize(source: &str) -> Vec<Token> {
 
         if c == &'`' {
             tokens.push(Token::handle_back_quote(&mut source));
+            break;
+        }
+
+        if c == &'>' {
+            tokens.push(Token::handle_greater(&mut source));
+            break;
         }
     }
 

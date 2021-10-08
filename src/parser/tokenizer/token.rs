@@ -188,6 +188,32 @@ impl Token {
             }
         }
     }
+
+    pub fn handle_greater(source: &mut Peekable<Chars>) -> Self {
+        source.next();
+
+        let mut quote_text = String::from("");
+
+        loop {
+            let c = source.peek();
+
+            if c.is_none() {
+                break;
+            }
+
+            let c = c.unwrap();
+
+            quote_text.push(source.next().unwrap());
+
+            if quote_text.ends_with("\n\n") {
+                quote_text.pop();
+                quote_text.pop();
+                break;
+            }
+        }
+
+        Self::Blockquote(quote_text)
+    }
 }
 
 #[cfg(test)]
