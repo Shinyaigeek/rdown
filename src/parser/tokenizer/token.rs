@@ -298,4 +298,34 @@ const bar = 2;"
             ))
         )
     }
+
+    #[test]
+    fn handle_greater_with_simple_text() {
+        let mut source = ">hoge".chars().peekable();
+
+        let token = Token::handle_greater(&mut source);
+
+        assert_eq!(token, Token::Blockquote("hoge".to_string()))
+    }
+
+    #[test]
+    fn handle_greater_with_text_with_breakline() {
+        let mut source = ">hoge
+fuga
+
+bar"
+        .chars()
+        .peekable();
+
+        let token = Token::handle_greater(&mut source);
+
+        assert_eq!(
+            token,
+            Token::Blockquote(
+                "hoge
+fuga"
+                    .to_string()
+            )
+        )
+    }
 }
