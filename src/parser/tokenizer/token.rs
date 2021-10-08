@@ -230,16 +230,17 @@ impl Token {
         source.next();
 
         let c = source.peek();
+
         if c.unwrap_or(&' ') == &'(' {
             source.next();
-            let identifier = Self::handle_link_label(source);
-            if identifier.is_none() {
+            let href = Self::handle_link_href(source);
+            if href.is_none() {
                 // current iterator position should be same
                 return Self::handle_text(&mut rev_source);
             } else {
                 source.next();
-                let identifier = identifier.unwrap();
-                Self::LinkReference((label, identifier))
+                let href = href.unwrap();
+                Self::Link((label, href))
             }
         } else if c.unwrap_or(&' ') == &'[' {
             source.next();
@@ -285,6 +286,8 @@ impl Token {
             if c == &']' {
                 brace_diff -= 1;
             }
+
+            label.push(source.next().unwrap())
         }
     }
 
@@ -315,6 +318,8 @@ impl Token {
             if c == &')' {
                 brace_diff -= 1;
             }
+
+            href.push(source.next().unwrap());
         }
     }
 }
@@ -430,5 +435,14 @@ fuga"
                     .to_string()
             )
         )
+    }
+
+    #[test]
+    fn parse_link_correctly() {
+        let mut source = "[hoge](fuga)".chars().peekable();
+
+        let token = Token::handle_left_brace(&mut source);
+
+        assert_eq!(token, Token::Link(("hoge".to_string(), "fuga".to_string())))
     }
 }
