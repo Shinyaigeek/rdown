@@ -26,6 +26,8 @@ impl Token {
     pub fn handle_sharp(source: &mut Peekable<Chars>) -> Self {
         let mut sharp_cnt: u8 = 0;
 
+        let mut rev_source = source.clone();
+
         loop {
             let c = source.peek();
             if c.is_none() {
@@ -42,9 +44,8 @@ impl Token {
                 source.next();
                 break;
             } else {
-                let nth = source.count();
-                source.nth(nth - sharp_cnt as usize);
-                return Self::handle_text(source);
+                // iterator current position should be same
+                return Self::handle_text(&mut rev_source);
             }
         }
 
@@ -53,9 +54,8 @@ impl Token {
         if sharp_cnt <= 6 {
             Self::Heading((sharp_cnt, heading_text))
         } else {
-            let nth = source.count();
-            source.nth(nth - sharp_cnt as usize);
-            return Self::handle_text(source);
+            // iterator current position should be same
+            return Self::handle_text(&mut rev_source);
         }
     }
 
@@ -118,6 +118,30 @@ mod test {
         let mut source = "### bar".chars().peekable();
         let token = Token::handle_sharp(&mut source);
         assert_eq!(token, Token::Heading((3, "bar".to_string())));
+
+        let mut source = "###### fuga".chars().peekable();
+        let token = Token::handle_sharp(&mut source);
+        assert_eq!(token, Token::Heading((6, "fuga".to_string())));
+    }
+
+    #[test]
+    fn more_than_7_sharp_should_be_text() {
+        let mut source = "####### hoge
+## hoge"
+            .chars()
+            .peekable();
+        let token = Token::handle_sharp(&mut source);
+        assert_eq!(token, Token::Paragraph("####### hoge".to_string()));
+        source.next();
+        let token = Token::handle_sharp(&mut source);
+        assert_eq!(token, Token::Heading((2, "hoge".to_string())))
+    }
+
+    #[test]
+    fn sharp_with_text_without_space_should_be_text() {
+        let mut source = "##hoge".chars().peekable();
+        let token = Token::handle_sharp(&mut source);
+        assert_eq!(token, Token::Paragraph("##hoge".to_string()));
     }
 
     #[test]
