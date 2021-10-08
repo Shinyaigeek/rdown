@@ -445,4 +445,58 @@ fuga"
 
         assert_eq!(token, Token::Link(("hoge".to_string(), "fuga".to_string())))
     }
+
+    #[test]
+    fn parse_link_reference_correctly() {
+        let mut source = "[hoge][fuga]".chars().peekable();
+
+        let token = Token::handle_left_brace(&mut source);
+
+        assert_eq!(
+            token,
+            Token::LinkReference(("hoge".to_string(), "fuga".to_string()))
+        )
+    }
+
+    #[test]
+    fn parse_link_as_text_with_breakline() {
+        let mut source = "[ho
+ge](fuga)"
+            .chars()
+            .peekable();
+
+        let token = Token::handle_left_brace(&mut source);
+
+        assert_eq!(token, Token::Paragraph("[ho".to_string()))
+    }
+
+    #[test]
+    fn parse_brace_as_text() {
+        let mut source = "[hoge]".chars().peekable();
+
+        let token = Token::handle_left_brace(&mut source);
+
+        assert_eq!(token, Token::Paragraph("[hoge]".to_string()))
+    }
+
+    #[test]
+    fn parse_brace_as_text_with_incorrect_link() {
+        let mut source = "[hoge](fuga".chars().peekable();
+
+        let token = Token::handle_left_brace(&mut source);
+
+        assert_eq!(token, Token::Paragraph("[hoge](fuga".to_string()))
+    }
+
+    #[test]
+    fn parse_brace_with_link_with_brace() {
+        let mut source = "[hoge](fuga())".chars().peekable();
+
+        let token = Token::handle_left_brace(&mut source);
+
+        assert_eq!(
+            token,
+            Token::Link(("hoge".to_string(), "fuga()".to_string()))
+        )
+    }
 }
