@@ -145,6 +145,7 @@ impl Token {
 
     fn handle_code(source: &mut Peekable<Chars>) -> Self {
         let mut language = Self::handle_code_language(source);
+        source.next();
         let mut code = String::from("");
 
         loop {
@@ -157,7 +158,8 @@ impl Token {
             let c = c.unwrap();
 
             code.push(source.next().unwrap());
-            if code.ends_with("```") {
+            if code.ends_with("\n```") {
+                code.pop();
                 code.pop();
                 code.pop();
                 code.pop();
@@ -242,5 +244,32 @@ hoge"
         let mut source = "`hoge`".chars().peekable();
         let token = Token::handle_back_quote(&mut source);
         assert_eq!(token, Token::InlineCode("hoge".to_string()))
+    }
+
+    #[test]
+    fn handle_inline_code_with_empty_text() {
+        let mut source = "``".chars().peekable();
+        let token = Token::handle_back_quote(&mut source);
+        assert_eq!(token, Token::InlineCode("".to_string()))
+    }
+
+    #[test]
+    fn handle__code_with_simple_text() {
+        let mut source = "```javascript
+const hoge = 1;
+const bar = 2;
+```"
+        .chars()
+        .peekable();
+        let token = Token::handle_back_quote(&mut source);
+        assert_eq!(
+            token,
+            Token::Code((
+                "javascript".to_string(),
+                "const hoge = 1;
+const bar = 2;"
+                    .to_string()
+            ))
+        )
     }
 }
