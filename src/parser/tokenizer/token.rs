@@ -214,6 +214,109 @@ impl Token {
 
         Self::Blockquote(quote_text)
     }
+
+    pub fn handle_left_brace(source: &mut Peekable<Chars>) -> Self {
+        let mut rev_source = source.clone();
+        source.next();
+        let label = Self::handle_link_label(source);
+
+        if label.is_none() {
+            // current iterator position should be same
+            return Self::handle_text(&mut rev_source);
+        }
+
+        let label = label.unwrap();
+
+        source.next();
+
+        let c = source.peek();
+        if c.unwrap_or(&' ') == &'(' {
+            source.next();
+            let identifier = Self::handle_link_label(source);
+            if identifier.is_none() {
+                // current iterator position should be same
+                return Self::handle_text(&mut rev_source);
+            } else {
+                source.next();
+                let identifier = identifier.unwrap();
+                Self::LinkReference((label, identifier))
+            }
+        } else if c.unwrap_or(&' ') == &'[' {
+            source.next();
+            let identifier = Self::handle_link_label(source);
+            if identifier.is_none() {
+                // current iterator position should be same
+                return Self::handle_text(&mut rev_source);
+            } else {
+                source.next();
+                let identifier = identifier.unwrap();
+                Self::LinkReference((label, identifier))
+            }
+        } else {
+            // current iterator position should be same
+            return Self::handle_text(&mut rev_source);
+        }
+    }
+
+    fn handle_link_label(source: &mut Peekable<Chars>) -> Option<String> {
+        let mut label = String::from("");
+        let mut brace_diff = 0;
+
+        loop {
+            let c = source.peek();
+
+            if c.is_none() {
+                return None;
+            }
+
+            let c = c.unwrap();
+
+            if c == &'\n' {
+                return None;
+            }
+
+            if c == &']' && brace_diff == 0 {
+                return Some(label);
+            }
+
+            if c == &'[' {
+                brace_diff += 1;
+            }
+            if c == &']' {
+                brace_diff -= 1;
+            }
+        }
+    }
+
+    fn handle_link_href(source: &mut Peekable<Chars>) -> Option<String> {
+        let mut href = String::from("");
+        let mut brace_diff = 0;
+
+        loop {
+            let c = source.peek();
+
+            if c.is_none() {
+                return None;
+            }
+
+            let c = c.unwrap();
+
+            if c == &'\n' {
+                return None;
+            }
+
+            if c == &')' && brace_diff == 0 {
+                return Some(href);
+            }
+
+            if c == &'(' {
+                brace_diff += 1;
+            }
+            if c == &')' {
+                brace_diff -= 1;
+            }
+        }
+    }
 }
 
 #[cfg(test)]
