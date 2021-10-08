@@ -21,8 +21,11 @@ pub fn tokenize(source: &str) -> Vec<Token> {
 
         if c == &'#' && is_breaked {
             tokens.push(Token::handle_sharp(&mut source));
-            tokens.push(Token::Break);
-            source.next();
+            break;
+        }
+
+        if c == &'`' {
+            tokens.push(Token::handle_back_quote(&mut source));
         }
     }
 

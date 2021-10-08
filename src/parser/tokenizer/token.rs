@@ -5,8 +5,9 @@ use std::str::Chars;
 pub enum Token {
     Paragraph(String),
     Heading((u8, String)),
+    // TODO
     Html(String),
-    Code(String),
+    Code((String, String)),
     Blockquote(String),
     ThematicBreak,
     List(String),
@@ -103,6 +104,88 @@ impl Token {
 
         Self::Paragraph(text)
     }
+
+    pub fn handle_back_quote(source: &mut Peekable<Chars>) -> Self {
+        source.next();
+
+        if source.peek().unwrap_or(&' ') == &'`' {
+            source.next();
+            if source.peek().unwrap_or(&' ') == &'`' {
+                source.next();
+                Self::handle_code(source)
+            } else {
+                Self::InlineCode(String::from(""))
+            }
+        } else {
+            Self::handle_inline_code(source)
+        }
+    }
+
+    fn handle_inline_code(source: &mut Peekable<Chars>) -> Self {
+        let mut inline_code = String::from("");
+
+        loop {
+            if source.peek().is_none() {
+                break;
+            }
+
+            // * because peekable
+            let c = source.peek().unwrap();
+
+            if c == &'\n' || c == &'`' {
+                source.next();
+                break;
+            } else {
+                inline_code.push(source.next().unwrap());
+            }
+        }
+
+        Self::InlineCode(inline_code)
+    }
+
+    fn handle_code(source: &mut Peekable<Chars>) -> Self {
+        let mut language = Self::handle_code_language(source);
+        let mut code = String::from("");
+
+        loop {
+            let c = source.peek();
+
+            if c.is_none() {
+                break;
+            }
+
+            let c = c.unwrap();
+
+            code.push(source.next().unwrap());
+            if code.ends_with("```") {
+                code.pop();
+                code.pop();
+                code.pop();
+                break;
+            }
+        }
+
+        Self::Code((language, code))
+    }
+
+    fn handle_code_language(source: &mut Peekable<Chars>) -> String {
+        let mut language = String::from("");
+        loop {
+            let c = source.peek();
+
+            if c.is_none() {
+                return "".to_string();
+            }
+
+            let c = c.unwrap();
+
+            if c == &'\n' {
+                return language;
+            } else {
+                language.push(source.next().unwrap());
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -152,5 +235,12 @@ hoge"
             .peekable();
         let token = Token::handle_text(&mut source);
         assert_eq!(token, Token::Paragraph("asdf".to_string()));
+    }
+
+    #[test]
+    fn handle_inline_code_with_simple_text() {
+        let mut source = "`hoge`".chars().peekable();
+        let token = Token::handle_back_quote(&mut source);
+        assert_eq!(token, Token::InlineCode("hoge".to_string()))
     }
 }
