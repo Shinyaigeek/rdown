@@ -1,24 +1,26 @@
 use crate::parser::tokenizer::token::Token;
 
-pub fn tokenize<'a>(source: &str) -> Vec<Token<'a>> {
-    let mut tokens: Vec<Token<'a>> = vec![];
-    let mut is_escaping = false;
+pub fn tokenize(source: &str) -> Vec<Token> {
+    let mut tokens: Vec<Token> = vec![];
     let mut is_breaked = true;
 
-    for c in source.chars() {
+    let mut source = source.chars().peekable();
+
+    loop {
+        if source.peek().is_none() {
+            break;
+        }
+
+        // * because peekable
+        let c = source.next().unwrap();
         if c == '\n' {
             tokens.push(Token::Break);
             is_breaked = true;
             continue;
         }
-        is_breaked = false;
-        if c == '\\' {
-            is_escaping = true;
-            continue;
-        }
 
-        if c == ' ' {
-            is_escaping = false;
+        if c == '#' {
+            tokens.push(Token::handle_sharp(&mut source));
         }
     }
 
@@ -31,7 +33,7 @@ mod test {
 
     #[test]
     fn tokenize_works_with_empty_source() {
-        let tokens: Vec<Token<'static>> = vec![];
+        let tokens: Vec<Token> = vec![];
         assert_eq!(tokenize(""), tokens);
     }
 }
